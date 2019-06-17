@@ -1,0 +1,6 @@
+{
+    "device": device,
+    "humidity": h,
+    "temperature" : t,
+    "Heat index" : hic
+    }

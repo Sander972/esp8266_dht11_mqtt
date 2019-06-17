@@ -1,14 +1,11 @@
 #include <ESP8266WiFi.h>
 #include <Wire.h>
 #include <PubSubClient.h>
-
+#include <ArduinoJson.h>
 #include "DHT.h"
 
-#define DHTPIN 5 // what digital pin we're connected to NodeMCU (D1)
-
+#define DHTPIN 5      // what digital pin we're connected to NodeMCU (D1)
 #define DHTTYPE DHT11 // DHT 11
-
-DHT dht(DHTPIN, DHTTYPE);
 
 #define wifi_ssid "NETGEAR52"
 #define wifi_password "niftylake235"
@@ -16,12 +13,18 @@ DHT dht(DHTPIN, DHTTYPE);
 #define mqtt_server "broker.hivemq.com"
 //#define mqtt_user "user"
 //#define mqtt_password "password"
+#define mqtt_port "1883"
+#define mqtt_Ws_port "8000"
 
 #define humidity_topic "sensor/humidity"
 #define temperature_celsius_topic "sensor/temperature_celsius"
 #define temperature_fahrenheit_topic "sensor/temperature_fahrenheit"
+
 #define telemetry "sander/camera"
 
+#define device "camera"
+
+DHT dht(DHTPIN, DHTTYPE);
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -30,7 +33,7 @@ void setup()
     Serial.begin(115200);
     dht.begin();
     setup_wifi();
-    client.setServer(mqtt_server, 1883);
+    client.setServer(mqtt_server, mqtt_port);
 }
 
 String macToStr(const uint8_t *mac)
@@ -113,25 +116,17 @@ void loop()
     }
     client.loop();
 
-    // Wait a few seconds between measurements.
     delay(2000);
 
-    // Reading temperature or humidity takes about 250 milliseconds!
-    // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
     float h = dht.readHumidity();
-    // Read temperature as Celsius (the default)
     float t = dht.readTemperature();
-    // Read temperature as Fahrenheit (isFahrenheit = true)
-    float f = dht.readTemperature(true);
 
-    // Check if any reads failed and exit early (to try again).
     if (isnan(h) || isnan(t) || isnan(f))
     {
         Serial.println("Failed to read from DHT sensor!");
         return;
     }
 
-    // Compute heat index in Celsius (isFahreheit = false)
     float hic = dht.computeHeatIndex(t, h, false);
 
     Serial.println("Humidity: %s % , Temperature: %s *C , Heat index: %s *C", h, t, hic);
@@ -142,7 +137,7 @@ void loop()
     client.publish(telemetry, String(t).c_str(), true);
     //client.publish(telemetry, String(msg).c_str(), true);
 
-/*
+    /*
     Serial.print("Temperature in Celsius:");
     Serial.println(String(t).c_str());
     client.publish(temperature_celsius_topic, String(t).c_str(), true);
@@ -156,3 +151,30 @@ void loop()
     client.publish(humidity_topic, String(h).c_str(), true);
     */
 }
+
+void jsonComposer(float h, float t, float hic)
+{
+    StaticJsonBuffer<300> JSONbuffer;
+
+    JsonObject &jsonMsg = JSONbuffer.createObject();
+    jsonMsg["device"] = device;
+
+    JsonObject& dht11_1 = jsonMsg.createNestedObject("dht11_1");
+    dht11_1.set("humidity", h);
+    dht11_1.set("temperature", t);
+    dht11_1.set("heat index", hic);
+/*
+    JsonObject& dht11_1 = jsonMsg.createNestedObject("dht11_2");
+    dht11_2.set("humidity", h);
+    dht11_2.set("temperature", t);
+    dht11_2.set("heat index", hic);
+*/
+
+    jsonMsg.printTo(Serial);
+
+}
+
+/*
+###links###
+https://techtutorialsx.com/2017/04/29/esp32-sending-json-messages-over-mqtt/
+*/
