@@ -115,43 +115,41 @@ void reconnect() {
   }
 }
 
-/*
-void jsonComposer(float h, float t, float hic)
-{
+String jsonComposer() {
 
-  const intcapacity=JSON_OBJECT_SIZE(3);StaticJsonDocument<capacity>doc;
+  timeClient.update();
+  String time = timeClient.getFormattedTime();
 
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
 
+  const int capacity = JSON_OBJECT_SIZE(6);
+  StaticJsonDocument<capacity> msg;
 
+  if (isnan(h) || isnan(t)) {
+    msg["status"].set("Failed to read from DHT sensor!");
 
+  } else {
+    float hic = dht.computeHeatIndex(t, h, false);
 
+    msg["device"].set(device);
+    msg["time"].set(time);
 
+    JsonObject dht22_1 = msg.createNestedObject();
+    dht22_1["humidity"].set(h);
+    dht22_1["temperature"].set(t);
+    dht22_1["heat index"].set(hic);
+  }
 
-    //StaticJsonBuffer<300> JSONbuffer;
-
-    //JsonObject &jsonMsg = JSONbuffer.createObject(); //arduinojson V5
-    JsonObject jsonMsg = JSONbuffer.createObject(); //arduinojson V6
-    jsonMsg["device"] = device;
-
-    JsonObject& dht11_1 = jsonMsg.createNestedObject("dht11_1");
-    dht11_1.set("humidity", h);
-    dht11_1.set("temperature", t);
-    dht11_1.set("heat index", hic);
-
-    //JsonObject& dht11_1 = jsonMsg.createNestedObject("dht11_2");
-    //dht11_2.set("humidity", h);
-    //dht11_2.set("temperature", t);
-    //dht11_2.set("heat index", hic);
-
-
-    jsonMsg.printTo(Serial);
-
+  // msg.printTo(Serial);
+  String json;
+  serializeJson(msg, json);
+  return json;
 }
-*/
 
 String readDht() {
-  
-  String msg = "null";
+
+  String msg;
   timeClient.update();
   String time = timeClient.getFormattedTime();
 
@@ -164,8 +162,11 @@ String readDht() {
   } else {
     float hic = dht.computeHeatIndex(t, h, false);
 
-    msg = ("Time: " + time + ", Humidity: " + String(h).c_str() + "%, Temperature: " + String(t).c_str() + "C, Heat index: " + String(hic).c_str());
-    //msg = ("Time: " + time + ", Humidity: " + h_s + ", Temperature: " + t_s + ", Heat index: " + hic_s);
+    msg = ("Time: " + time + ", Humidity: " + String(h).c_str() +
+           "%, Temperature: " + String(t).c_str() +
+           "C, Heat index: " + String(hic).c_str());
+    // msg = ("Time: " + time + ", Humidity: " + h_s + ", Temperature: " + t_s
+    // + ", Heat index: " + hic_s);
   }
 
   return msg;
@@ -177,8 +178,16 @@ void loop() {
     reconnect();
   }
   client.loop();
-  //implement to prevent delay() if((Psec - Csec)>5){send msg}
-  String msg = readDht();
+  // implement to prevent delay() if((Psec - Csec)>5){send msg}
+  // String msg = readDht();
+  // Serial.println(msg);
+  // client.publish(telemetry, String(msg).c_str(), true);
+
+  //String msg = "";
+  //serializeJson(jsonComposer(), msg);
+  //client.publish(telemetry, msg, true);
+
+  String msg = jsonComposer();
   Serial.println(msg);
   client.publish(telemetry, String(msg).c_str(), true);
 
