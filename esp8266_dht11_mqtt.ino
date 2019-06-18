@@ -17,8 +17,8 @@ https://github.com/arduino-libraries/NTPClient
 #define DHTPIN 5      // what digital pin we're connected to NodeMCU (D1)
 #define DHTTYPE DHT22 // DHT 22
 
-#define wifi_ssid "WIFI_TEST"
-#define wifi_password "bpsguest"
+#define wifi_ssid ""
+#define wifi_password ""
 
 #define mqtt_server "broker.hivemq.com"
 // string mqtt_user = "user"
