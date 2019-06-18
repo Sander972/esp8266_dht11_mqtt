@@ -4,3 +4,13 @@
     "temperature" : t,
     "Heat index" : hic
     }
+
+
+    String msg;
+    msg += "Humidity: ";
+    msg += h_s ;
+    msg += "% , Temperature: ";
+    msg += t_s ;
+    msg += "*C , Heat index:";
+    msg += hic_s ;
+  
