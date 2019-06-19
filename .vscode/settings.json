@@ -2,7 +2,8 @@
     "files.associations": {
         "string": "cpp",
         "xstring": "cpp",
-        "xiosbase": "cpp"
+        "xiosbase": "cpp",
+        "cmath": "cpp"
     },
     "C_Cpp.clang_format_fallbackStyle": "{ PointerAlignment: Left}"
 }

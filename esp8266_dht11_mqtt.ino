@@ -14,19 +14,16 @@ https://github.com/adafruit/Adafruit_Sensor
 https://github.com/arduino-libraries/NTPClient
 */
 
-#define DHTPIN 5      // what digital pin we're connected to NodeMCU (D1)
+#define DHTPIN_1 5    // what digital pin we're connected to NodeMCU (D1)
+#define DHTPIN_2 4    // D2
 #define DHTTYPE DHT22 // DHT 22
 
-#define wifi_ssid ""
-#define wifi_password ""
+#define wifi_ssid "NETGEAR52"
+#define wifi_password "niftylake235"
 
 #define mqtt_server "broker.hivemq.com"
 // string mqtt_user = "user"
 // string mqtt_password  = "password"
-
-#define humidity_topic "sensor/humidity"
-#define temperature_celsius_topic "sensor/temperature_celsius"
-#define temperature_fahrenheit_topic "sensor/temperature_fahrenheit"
 
 #define device "camera" // name of the device
 
@@ -35,7 +32,8 @@ https://github.com/arduino-libraries/NTPClient
 #define telemetry "sander/camera"
 /*###topics###*/
 
-DHT dht(DHTPIN, DHTTYPE);
+DHT dht_1(DHTPIN_1, DHTTYPE);
+DHT dht_2(DHTPIN_2, DHTTYPE);
 WiFiClient espClient;
 PubSubClient client(espClient);
 WiFiUDP ntpUDP;
@@ -43,7 +41,8 @@ NTPClient timeClient(ntpUDP);
 
 void setup() {
   Serial.begin(115200);
-  dht.begin();
+  dht_1.begin();
+  dht_2.begin();
   setup_wifi();
   client.setServer(mqtt_server, 1883);
   timeClient.begin();
@@ -120,38 +119,49 @@ String jsonComposer() {
   timeClient.update();
   String time = timeClient.getFormattedTime();
 
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
+  float t1 = dht_1.readTemperature();
+  float h1 = dht_1.readHumidity();
+  float hic1 = dht_1.computeHeatIndex(t1, h1, false);
 
-  const int capacity = JSON_OBJECT_SIZE(6);
+  float t2 = dht_2.readTemperature();
+  float h2 = dht_2.readHumidity();
+  float hic2 = dht_2.computeHeatIndex(t2, h2, false);
+
+  const int capacity = JSON_OBJECT_SIZE(10); // how much entries are in the json
   StaticJsonDocument<capacity> msg;
 
-  if (isnan(h) || isnan(t)) {
+  msg["device"].set(device);
+  msg["time"].set(time);
+
+  if (isnan(t1) || isnan(t2)) {
     msg["status"].set("Failed to read from DHT sensor!");
-
+    if (isnan(t1)) {
+      msg["status"].set("err sensor 1");
+    } else {
+      msg["status"].set("err sensor 2");
+    }
   } else {
-    float hic = dht.computeHeatIndex(t, h, false);
 
-    msg["device"].set(device);
-    msg["time"].set(time);
+    JsonObject dht22_1 = msg.createNestedObject("dht22_1");
+    dht22_1["humidity"].set(h1);
+    dht22_1["temperature"].set(t1);
+    dht22_1["heat index"].set(hic1);
 
-    JsonObject dht22_1 = msg.createNestedObject();
-    dht22_1["humidity"].set(h);
-    dht22_1["temperature"].set(t);
-    dht22_1["heat index"].set(hic);
+    JsonObject dht22_2 = msg.createNestedObject("dht22_2");
+    dht22_2["humidity"].set(h2);
+    dht22_2["temperature"].set(t2);
+    dht22_2["heat index"].set(hic2);
   }
 
-  // msg.printTo(Serial);
   String json;
   serializeJson(msg, json);
   return json;
 }
 
-String readDht() {
+/*
+float readDht(string sensor) {
 
-  String msg;
-  timeClient.update();
-  String time = timeClient.getFormattedTime();
+  float read[];
 
   float h = dht.readHumidity();
   float t = dht.readTemperature();
@@ -171,6 +181,7 @@ String readDht() {
 
   return msg;
 }
+*/
 
 void loop() {
 
@@ -183,9 +194,9 @@ void loop() {
   // Serial.println(msg);
   // client.publish(telemetry, String(msg).c_str(), true);
 
-  //String msg = "";
-  //serializeJson(jsonComposer(), msg);
-  //client.publish(telemetry, msg, true);
+  // String msg = "";
+  // serializeJson(jsonComposer(), msg);
+  // client.publish(telemetry, msg, true);
 
   String msg = jsonComposer();
   Serial.println(msg);
