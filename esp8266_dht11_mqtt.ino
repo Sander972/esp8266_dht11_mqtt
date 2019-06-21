@@ -1,3 +1,4 @@
+//#define MQTT_MAX_PACKET_SIZE 512
 #include "DHT.h"
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
@@ -23,9 +24,10 @@ https://github.com/adafruit/Adafruit_BME680
 #define DHTPIN_1 13   // D7
 #define DHTPIN_2 15   // D8
 #define DHTTYPE DHT22 // DHT 22
+//voc sensor --> SCL-D1   SDA-D2
 
-#define wifi_ssid "sander"
-#define wifi_password "alessandrotuttomaiuscolo"
+#define wifi_ssid "NETGEAR52"
+#define wifi_password "niftylake235"
 
 #define mqtt_server "broker.hivemq.com"
 //#define mqtt_server "192.168.101.234"
@@ -204,19 +206,19 @@ void loop() {
   client.loop();
   // implement to prevent delay() if((Psec - Csec)>5){send(msg)}
 
-  // String msg = jsonComposer();
-  String msg = jsonComposer().c_str();
+  String msg = jsonComposer();
+  //String msg = jsonComposer().c_str();
   Serial.println(msg);
 
-  // int ok = client.publish(telemetry, String(msg).c_str(), true);
-  int ok = client.publish(telemetry, msg, true);
+  int ok = client.publish(telemetry, String(msg).c_str(), true);
+  //int ok = client.publish(telemetry, msg, true);
 
   if (ok) {
     // Serial.println(msg);
     Serial.println("Publish ok");
-    // digitalWrite(BUILTIN_LED, HIGH);
-    // delay(200);
-    // digitalWrite(BUILTIN_LED, LOW);
+    digitalWrite(BUILTIN_LED, HIGH);
+    delay(200);
+    digitalWrite(BUILTIN_LED, LOW);
   } else {
     Serial.println("err publishing");
     digitalWrite(BUILTIN_LED, LOW);
