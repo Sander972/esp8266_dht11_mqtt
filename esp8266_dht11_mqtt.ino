@@ -217,12 +217,12 @@ void loop() {
     // Serial.println(msg);
     Serial.println("Publish ok");
     digitalWrite(BUILTIN_LED, HIGH);
-    delay(200);
+    delay(500);
     digitalWrite(BUILTIN_LED, LOW);
   } else {
     Serial.println("err publishing");
     digitalWrite(BUILTIN_LED, LOW);
   }
 
-  delay(10000);
+  delay(5000);
 }
