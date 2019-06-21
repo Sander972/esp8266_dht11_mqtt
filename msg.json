@@ -41,3 +41,6 @@
         "circa altitude": 31.7691
     }
 }
+
+
+pubsubclient.h --> 26      #define MQTT_MAX_PACKET_SIZE 512
