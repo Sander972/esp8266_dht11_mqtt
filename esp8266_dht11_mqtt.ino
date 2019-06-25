@@ -164,20 +164,20 @@ String jsonComposer() {
 
   JsonObject dht22_1 = msg.createNestedObject("dht22_1");
   if (isnan(t1)) {
-    dht22_1["status"].set("err sensor dht22_1");
+    dht22_1["status"].set("err sensor");
   } else {
     dht22_1["temperature"].set(t1);
     dht22_1["humidity"].set(h1);
-    dht22_1["heat index"].set(dht_1.computeHeatIndex(t1, h1, false));
+    dht22_1["heat_index"].set(dht_1.computeHeatIndex(t1, h1, false));
   }
 
   JsonObject dht22_2 = msg.createNestedObject("dht22_2");
   if (isnan(t2)) {
-    dht22_2["status"].set("err sensor dht22_2");
+    dht22_2["status"].set("err sensor");
   } else {
     dht22_2["temperature"].set(t2);
     dht22_2["humidity"].set(h1);
-    dht22_2["heat index"].set(dht_2.computeHeatIndex(t2, h2, false));
+    dht22_2["heat_index"].set(dht_2.computeHeatIndex(t2, h2, false));
   }
 
   JsonObject bme680 = msg.createNestedObject("bme680");
@@ -187,8 +187,8 @@ String jsonComposer() {
     bme680["temperature"].set(t3);
     bme680["humidity"].set(bme.humidity);
     bme680["pressure"].set(bme.pressure / 100.0);
-    bme680["gas resistance"].set(bme.gas_resistance / 1000.0);
-    bme680["circa altitude"].set(bme.readAltitude(SEALEVELPRESSURE_HPA));
+    bme680["gas_resistance"].set(bme.gas_resistance / 1000.0);
+    bme680["circa_altitude"].set(bme.readAltitude(SEALEVELPRESSURE_HPA));
   }
 
   String json;
