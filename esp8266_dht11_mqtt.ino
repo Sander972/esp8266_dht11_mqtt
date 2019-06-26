@@ -1,13 +1,14 @@
 //#define MQTT_MAX_PACKET_SIZE 512
-#include "DHT.h"
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
+#include <ESP8266WiFiMulti.h>
 #include <NTPClient.h>
 #include <PubSubClient.h>
 #include <WiFiUdp.h>
 #include <Wire.h>
 
 #include "Adafruit_BME680.h"
+#include "DHT.h"
 #include <Adafruit_Sensor.h>
 #include <SPI.h>
 
@@ -24,13 +25,9 @@ https://github.com/adafruit/Adafruit_BME680
 #define DHTPIN_1 13   // D7
 #define DHTPIN_2 15   // D8
 #define DHTTYPE DHT22 // DHT 22
-//voc sensor --> SCL-D1   SDA-D2
-
-#define wifi_ssid "NETGEAR52"
-#define wifi_password "niftylake235"
+// voc sensor --> SCL-D1   SDA-D2
 
 #define mqtt_server "broker.hivemq.com"
-//#define mqtt_server "192.168.101.234"
 // string mqtt_user = "user"
 // string mqtt_password  = "password"
 
@@ -50,16 +47,20 @@ PubSubClient client(espClient);
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 Adafruit_BME680 bme;
+ESP8266WiFiMulti wifiMulti;
 
 void setup() {
   Serial.begin(115200);
-  dht_1.begin();
-  dht_2.begin();
   setup_wifi();
+
   client.setServer(mqtt_server, 1883);
   timeClient.begin();
   timeClient.setTimeOffset(7200); // set timezone = GMT+2
+
   pinMode(BUILTIN_LED, OUTPUT);
+
+  dht_1.begin();
+  dht_2.begin();
 
   bme.begin(0x76);
   // Set up oversampling and filter initialization
@@ -80,24 +81,47 @@ String macToStr(const uint8_t* mac) {
   return result;
 }
 
-void setup_wifi() {
-  delay(10);
-  // We start by connecting to a WiFi network
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(wifi_ssid);
+void scanWifi() {
+  Serial.println("Scanning WiFis");
 
-  WiFi.begin(wifi_ssid, wifi_password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+  int n = WiFi.scanNetworks();
+  Serial.println("scan done");
+  if (n == 0) {
+    Serial.println("no networks found");
+  } else {
+    Serial.print(n);
+    Serial.println(" networks found");
+    for (int i = 0; i < n; ++i) {
+      // Print SSID and RSSI for each network found
+      Serial.print(i + 1);
+      Serial.print(": ");
+      Serial.print(WiFi.SSID(i));
+      Serial.print(" (");
+      Serial.print(WiFi.RSSI(i));
+      Serial.print(")");
+      Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE) ? " " : "*");
+      delay(10);
+    }
   }
-
   Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
+}
+
+void setup_wifi() {
+  WiFi.mode(WIFI_STA);
+  // WiFi.disconnect();
+  // We start by connecting to a WiFi network
+  scanWifi();
+  wifiMulti.addAP("sander", "alessandrotuttomaiuscolo");
+  wifiMulti.addAP("NETGEAR52", "niftylake235");
+  wifiMulti.addAP("WIFI_TEST", "bpsguest");
+
+  Serial.println("Connecting Wifi...");
+  if (wifiMulti.run() == WL_CONNECTED) {
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+  }
 }
 
 void reconnect() {
@@ -198,20 +222,24 @@ String jsonComposer() {
 
 void loop() {
 
+  if (wifiMulti.run() != WL_CONNECTED) {
+    Serial.println("WiFi not connected!");
+    // delay(1000);
+  }
+
   timeClient.update();
 
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
-  // implement to prevent delay() if((Psec - Csec)>5){send(msg)}
 
   String msg = jsonComposer();
-  //String msg = jsonComposer().c_str();
+  // String msg = jsonComposer().c_str();
   Serial.println(msg);
 
   int ok = client.publish(telemetry, String(msg).c_str(), true);
-  //int ok = client.publish(telemetry, msg, true);
+  // int ok = client.publish(telemetry, msg, true);
 
   if (ok) {
     // Serial.println(msg);
