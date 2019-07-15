@@ -27,9 +27,10 @@ https://github.com/adafruit/Adafruit_BME680
 #define DHTTYPE DHT22 // DHT 22
 // voc sensor --> SCL-D1   SDA-D2
 
-#define mqtt_server "broker.hivemq.com"
-// string mqtt_user = "user"
-// string mqtt_password  = "password"
+//#define mqtt_server "broker.hivemq.com"
+#define mqtt_server "broker-mvp-ws.northeurope.azurecontainer.io"
+const char* mqtt_user = "alessandro";
+const char* mqtt_password  = "minca";
 
 #define device "camera" // name of the device
 
@@ -145,7 +146,7 @@ void reconnect() {
 
     // Attempt to connect
     // If you do not want to use a username and password, change next line to
-    if (client.connect((char*)clientName.c_str())) {
+    if (client.connect((char*)clientName.c_str(), mqtt_user, mqtt_password)) {
       // if (client.connect((char*) clientName.c_str()), mqtt_user,
       // mqtt_password)) {
       Serial.println("connected");
@@ -188,7 +189,9 @@ String jsonComposer() {
 
   JsonObject dht22_1 = msg.createNestedObject("dht22_1");
   if (isnan(t1)) {
-    dht22_1["status"].set("err sensor");
+    dht22_1["temperature"].set(0);
+    dht22_1["humidity"].set(0);
+    dht22_1["heat_index"].set(0);
   } else {
     dht22_1["temperature"].set(t1);
     dht22_1["humidity"].set(h1);
@@ -197,7 +200,9 @@ String jsonComposer() {
 
   JsonObject dht22_2 = msg.createNestedObject("dht22_2");
   if (isnan(t2)) {
-    dht22_2["status"].set("err sensor");
+    dht22_2["temperature"].set(0);
+    dht22_2["humidity"].set(0);
+    dht22_2["heat_index"].set(0);
   } else {
     dht22_2["temperature"].set(t2);
     dht22_2["humidity"].set(h1);
@@ -206,7 +211,11 @@ String jsonComposer() {
 
   JsonObject bme680 = msg.createNestedObject("bme680");
   if (isnan(t3)) {
-    bme680["status"].set("err sensor VOC");
+    bme680["temperature"].set(0);
+    bme680["humidity"].set(0);
+    bme680["pressure"].set(0);
+    bme680["gas_resistance"].set(0);
+    bme680["circa_altitude"].set(0);
   } else {
     bme680["temperature"].set(t3);
     bme680["humidity"].set(bme.humidity);
