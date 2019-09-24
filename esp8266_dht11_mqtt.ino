@@ -1,43 +1,22 @@
 //#define MQTT_MAX_PACKET_SIZE 512
-#include <ArduinoJson.h>
+#include <ArduinoJson.h>                    //https://github.com/bblanchon/ArduinoJson
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
-#include <NTPClient.h>
-#include <PubSubClient.h>
+#include <NTPClient.h>                      //https://github.com/arduino-libraries/NTPClient
+#include <PubSubClient.h>                   //https://github.com/knolleary/pubsubclient
 #include <WiFiUdp.h>
 #include <Wire.h>
 
-#include "Adafruit_BME680.h"
-#include "DHT.h"
-#include <Adafruit_Sensor.h>
+#include "Adafruit_BME680.h"                //https://github.com/adafruit/Adafruit_BME680
+#include "DHT.h"                            //https://github.com/adafruit/DHT-sensor-library
+#include <Adafruit_Sensor.h>                //https://github.com/adafruit/Adafruit_Sensor
 #include <SPI.h>
-
-/*
-libs_links:
-https://github.com/knolleary/pubsubclient
-https://github.com/bblanchon/ArduinoJson
-https://github.com/adafruit/DHT-sensor-library
-https://github.com/adafruit/Adafruit_Sensor
-https://github.com/arduino-libraries/NTPClient
-https://github.com/adafruit/Adafruit_BME680
-*/
+#include "secret.h"
 
 #define DHTPIN_1 13   // D7
 #define DHTPIN_2 15   // D8
 #define DHTTYPE DHT22 // DHT 22
 // voc sensor --> SCL-D1   SDA-D2
-
-//#define mqtt_server "broker.hivemq.com"
-#define mqtt_server "broker-mvp-ws.northeurope.azurecontainer.io"
-const char* mqtt_user = "alessandro";
-const char* mqtt_password  = "minca";
-
-#define device "camera" // name of the device
-
-/*###topics###*/
-//#define telemetry "sander/"+device
-#define telemetry "sander/camera"
-/*###topics###*/
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 
@@ -110,11 +89,10 @@ void scanWifi() {
 void setup_wifi() {
   WiFi.mode(WIFI_STA);
   // WiFi.disconnect();
-  // We start by connecting to a WiFi network
   scanWifi();
-  wifiMulti.addAP("sander", "alessandrotuttomaiuscolo");
-  wifiMulti.addAP("NETGEAR52", "niftylake235");
-  wifiMulti.addAP("WIFI_TEST", "bpsguest");
+  wifiMulti.addAP(ssid_palazzetti, pws_palazzetti);
+  wifiMulti.addAP(ssid_casa, pws_casa);
+  wifiMulti.addAP(ssid_hotspot, pws_hotspot);
 
   Serial.println("Connecting Wifi...");
   if (wifiMulti.run() == WL_CONNECTED) {
@@ -126,12 +104,8 @@ void setup_wifi() {
 }
 
 void reconnect() {
-  // Loop until we're reconnected
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-
-    // Generate client name based on MAC address and last 8 bits of microsecond
-    // counter
     String clientName;
     clientName += "esp8266-";
     uint8_t mac[6];
@@ -144,11 +118,8 @@ void reconnect() {
     Serial.print(" as ");
     Serial.println(clientName);
 
-    // Attempt to connect
-    // If you do not want to use a username and password, change next line to
-    if (client.connect((char*)clientName.c_str(), mqtt_user, mqtt_password)) {
-      // if (client.connect((char*) clientName.c_str()), mqtt_user,
-      // mqtt_password)) {
+    //if (client.connect((char*)clientName.c_str(), mqtt_user, mqtt_password)) {      //with pws
+    if (client.connect((char*)clientName.c_str())) {                                //without pws
       Serial.println("connected");
     } else {
       Serial.print("failed, rc=");
@@ -244,11 +215,9 @@ void loop() {
   client.loop();
 
   String msg = jsonComposer();
-  // String msg = jsonComposer().c_str();
   Serial.println(msg);
 
-  int ok = client.publish(telemetry, String(msg).c_str(), true);
-  // int ok = client.publish(telemetry, msg, true);
+  int ok = client.publish(telemetry, msg.c_str(), true);
 
   if (ok) {
     // Serial.println(msg);
